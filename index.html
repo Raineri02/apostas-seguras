@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Arbitragem</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-6">
+
+  <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6">
+    <h1 class="text-2xl font-bold text-center text-blue-400 mb-6">
+      💎 Gerador de Entradas de Arbitragem 💎
+    </h1>
+
+    <!-- Campo Nome do jogo -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-2">🏟 Nome do Jogo</label>
+      <input id="jogo" type="text" placeholder="Ex: Real Madrid x Barcelona"
+        class="w-full bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+    </div>
+
+    <!-- Container das casas -->
+    <div id="casas" class="space-y-3">
+      <!-- Casa 1 -->
+      <div class="flex gap-2">
+        <input type="text" placeholder="Casa 1 (ex: Betano)"
+          class="flex-1 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+        <input type="number" step="0.01" placeholder="Odd"
+          class="w-24 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+      </div>
+      <!-- Casa 2 -->
+      <div class="flex gap-2">
+        <input type="text" placeholder="Casa 2 (ex: Bet365)"
+          class="flex-1 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+        <input type="number" step="0.01" placeholder="Odd"
+          class="w-24 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+      </div>
+    </div>
+
+    <!-- Botão para adicionar casa -->
+    <button id="addCasa"
+      class="mt-4 w-full bg-blue-600 hover:bg-blue-700 transition text-white font-semibold rounded-lg p-2">
+      + Adicionar Casa
+    </button>
+
+    <!-- Campo stake -->
+    <div class="mt-6">
+      <label class="block text-sm font-medium mb-2">💰 Stake Total (R$)</label>
+      <input id="stake" type="number" placeholder="Ex: 1000"
+        class="w-full bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+    </div>
+
+    <!-- Resultado -->
+    <div class="mt-6 bg-slate-700 p-4 rounded-lg border border-slate-600">
+      <h2 class="font-bold text-blue-400 mb-2">📋 Resultado:</h2>
+      <pre id="resultado" class="whitespace-pre-wrap text-sm text-slate-200">
+💎 ENTRADA DE ARBITRAGEM 💎
+Preencha os campos para gerar a mensagem...
+      </pre>
+    </div>
+
+    <!-- Botão copiar -->
+    <button id="copiarmsg"
+      class="mt-4 w-full bg-blue-600 hover:bg-blue-700 transition text-white font-semibold rounded-lg p-2">
+      📋 Copiar Mensagem
+    </button>
+
+  </div>
+<script>
+  const casasContainer = document.getElementById("casas");
+  const addCasaBtn = document.getElementById("addCasa");
+  const resultado = document.getElementById("resultado");
+  const stakeInput = document.getElementById("stake");
+  const jogoInput = document.getElementById("jogo");
+  const copiarmsgBtn = document.getElementById("copiarmsg");
+
+ // ➕ Adicionar nova casa de apostas
+addCasaBtn.addEventListener("click", () => {
+ const div = document.createElement("div");
+ div.className = "flex gap-2";
+ div.innerHTML = `
+<input type="text" placeholder="Casa (ex: Betano)" class="flex-1 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+<input type="number" step="0.01" placeholder="Odd" class="w-24 bg-slate-700 rounded-lg p-2 border border-slate-600 focus:outline-none focus:border-blue-500">
+`;
+ casasContainer.appendChild(div);
+});
+
+  // 🚀 Gerar mensagem automática
+  function gerarMensagem() {
+    const jogo = jogoInput.value.trim();
+    const stake = parseFloat(stakeInput.value);
+    const casas = [...casasContainer.children]
+      .map(div => {
+        const [nomeInput, oddInput] = div.querySelectorAll("input");
+        return { nome: nomeInput.value.trim(), odd: parseFloat(oddInput.value) };
+      })
+      .filter(c => c.nome && c.odd);
+
+    if (!jogo || !stake || casas.length < 2) {
+      resultado.textContent = "⚠️ Preencha todos os campos corretamente.";
+      return;
+    }
+
+    const soma = casas.reduce((acc, c) => acc + (1 / c.odd), 0);
+    const arbitragem = (1 - soma) * 100;
+
+    if (soma >= 1) {
+      resultado.textContent = "❌ Nenhuma arbitragem detectada neste jogo.";
+      return;
+    }
+
+    const valores = casas.map(c => ({
+      ...c,
+      valor: ((stake / c.odd) / soma).toFixed(2)
+    }));
+
+    let msg = `💎 ENTRADA  💎\n`;
+    msg += `🏟️ ${jogo}\n`;
+    msg += `💰 Lucro: ${arbitragem.toFixed(2)}%\n`;
+    msg += `💵 Stake total: R$${stake.toFixed(2)}\n\n`;
+    msg += valores.map(c => `🏠 ${c.nome} | Odd ${c.odd} | Aposta R$${c.valor}`).join("\n");
+    msg += "\n🧮 Calculadora: https://calculadoradedutching.com/ \n";
+    msg += "🔒 Entrada verificada e ativa  aproveite antes da correção das odds!\n";
+    resultado.textContent = msg;
+  
+  }
+  // Gera mensagem automaticamente quando há mudança nos campos
+  document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", gerarMensagem);
+  });
+  casasContainer.addEventListener("input", gerarMensagem);
+
+// 📋 Botão copiar mensagem
+// Mudança: Usando a variável corretamente definida: copiarmsgBtn
+copiarmsgBtn.addEventListener("click", async () => {
+    const texto = resultado.textContent.trim();
+    if (!texto || texto.includes("Preencha os campos")) {
+      alert("⚠️ Nenhuma mensagem gerada ainda!");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(texto);
+      
+      // Mudança: Usando 'copiarmsgBtn'
+      copiarmsgBtn.textContent = "✅ Copiado!";
+      copiarmsgBtn.classList.add("bg-green-600");
+      
+      setTimeout(() => {
+        // Mudança: Usando 'copiarmsgBtn'
+        copiarmsgBtn.textContent = "📋 Copiar Mensagem";
+        copiarmsgBtn.classList.remove("bg-green-600");
+      }, 2000);
+      
+    } catch (err) {
+      alert("❌ Erro ao copiar a mensagem.");
+    }
+});
+
+
+</script>
+
+</body>
+</html>
